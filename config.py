@@ -1,41 +1,42 @@
 import os
-from dotenv import load_dotenv
 import logging
 
 logging.basicConfig(
-    format="%(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler("log.txt"), logging.StreamHandler()],
     level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
+logger = logging.getLogger(__name__)
 
-load_dotenv()
 
+class Config:
+    # ── Telegram API ──────────────────────────────────────────────
+    API_ID = int(os.environ.get("API_ID", 0))
+    API_HASH = os.environ.get("API_HASH", "")
+    BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 
-class Config(object):
-    # Get a token from @BotFather
-    BOT_TOKEN = os.environ.get("BOT_TOKEN")
-    # The Telegram API things
-    API_ID = os.environ.get("API_ID")
-    API_HASH = os.environ.get("API_HASH")
-    # Get these values from my.telegram.org
-    # Array to store users who are authorized to use the bot
+    # ── Access control ────────────────────────────────────────────
+    OWNER_ID = int(os.environ.get("OWNER_ID", 0))
+    AUTH_USERS = set(
+        int(x)
+        for x in os.environ.get("AUTH_USERS", "").split()
+        if x.strip().lstrip("-").isdigit()
+    )
 
-    # File /video download location
-    DOWNLOAD_LOCATION = "./DOWNLOADS"
+    # ── Paths & limits ────────────────────────────────────────────
+    DOWNLOAD_DIR = os.environ.get("DOWNLOAD_DIR", "downloads/")
+    MAX_FILE_SIZE = int(os.environ.get("MAX_FILE_SIZE", 2 * 1024 * 1024 * 1024))  # 2 GB
 
-    # Telegram maximum file upload size
-    TG_MAX_FILE_SIZE = 4194304000
-
-    # Chunk size that should be used with requests : default is 128KB
-    CHUNK_SIZE = int(os.environ.get("CHUNK_SIZE", 128))
-    # Proxy for accessing youtube-dl in GeoRestricted Areas
-    # Get your own proxy from https://github.com/rg3/youtube-dl/issues/1091#issuecomment-230163061
-    HTTP_PROXY = os.environ.get("HTTP_PROXY", "")
-
-    # Set timeout for subprocess
-    PROCESS_MAX_TIMEOUT = 3700
-
-    OWNER_ID = os.environ.get("OWNER_ID")
-    ADL_BOT_RQ = {}
-    AUTH_USERS = list({int(x) for x in os.environ.get("AUTH_USERS", "0").split()})
-    AUTH_USERS.append(OWNER_ID)
+    @classmethod
+    def validate(cls) -> bool:
+        """Return True if the mandatory env-vars are present."""
+        ok = True
+        if not cls.API_ID:
+            logger.error("API_ID is missing!")
+            ok = False
+        if not cls.API_HASH:
+            logger.error("API_HASH is missing!")
+            ok = False
+        if not cls.BOT_TOKEN:
+            logger.error("BOT_TOKEN is missing!")
+            ok = False
+        return ok
