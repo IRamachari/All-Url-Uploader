@@ -1,11 +1,20 @@
-FROM python:3.9
+FROM python:3.11-slim-bookworm
 
-RUN apt-get update -y && apt-get upgrade -y
-RUN apt-get install ffmpeg -y
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+        gcc \
+        libffi-dev \
+        musl-dev \
+        ffmpeg \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
 
-WORKDIR .
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
 COPY . .
 
-RUN pip3 install --no-cache-dir -r requirements.txt
-
-CMD ["python3", "bot.py"]
+CMD ["bash", "start.sh"]
